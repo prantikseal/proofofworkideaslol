@@ -1,11 +1,11 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import Header from "./Header";
 import SearchBar from "./SearchBar";
 import WorkCard from "./WorkCard";
 
-// Skeleton loader component
+// Skeleton loader component remains the same
 const SkeletonCard = () => {
   return (
     <div className="bg-white rounded-lg p-6 shadow-md">
@@ -24,12 +24,30 @@ const SkeletonCard = () => {
 
 const ProofOfWorkApp = () => {
   const [cards, setCards] = useState([]);
+  const [filteredCards, setFilteredCards] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     fetchGoogleSheetsData();
   }, []);
+
+  // Add new useEffect for search filtering
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setFilteredCards(cards);
+      return;
+    }
+
+    const query = searchQuery.toLowerCase();
+    const filtered = cards.filter(
+      (card) =>
+        card.title.toLowerCase().includes(query) ||
+        card.description.toLowerCase().includes(query)
+    );
+    setFilteredCards(filtered);
+  }, [searchQuery, cards]);
 
   const fetchGoogleSheetsData = async () => {
     try {
@@ -42,10 +60,8 @@ const ProofOfWorkApp = () => {
 
       const response = await fetch(url);
       const text = await response.text();
-      // Remove extra text to get only JSON
       const json = JSON.parse(text.slice(47).slice(0, -2));
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const transformedData = json.table.rows.map((row: any) => ({
         color: row.c[0]?.v || "#FFB347",
         title: row.c[1]?.v || "",
@@ -54,12 +70,17 @@ const ProofOfWorkApp = () => {
       }));
 
       setCards(transformedData);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setFilteredCards(transformedData); // Initialize filtered cards with all cards
     } catch (err: any) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
+  };
+
+  // Add search handler
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
   };
 
   const containerVariants = {
@@ -119,6 +140,13 @@ const ProofOfWorkApp = () => {
         damping: 25,
       },
     },
+    exit: {
+      opacity: 0,
+      y: 50,
+      transition: {
+        duration: 0.2,
+      },
+    },
   };
 
   if (error) {
@@ -144,51 +172,66 @@ const ProofOfWorkApp = () => {
         </motion.div>
 
         <motion.div variants={searchBarVariants}>
-          <SearchBar />
+          <SearchBar onSearch={handleSearch} />
         </motion.div>
 
         <motion.div
           variants={containerVariants}
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
         >
-          {loading
-            ? // Show skeleton loaders while loading
-              Array.from({ length: 6 }).map((_, index) => (
+          {loading ? (
+            // Show skeleton loaders while loading
+            Array.from({ length: 6 }).map((_, index) => (
+              <motion.div
+                key={`skeleton-${index}`}
+                variants={cardVariants}
+                className="transform-gpu"
+              >
+                <SkeletonCard />
+              </motion.div>
+            ))
+          ) : (
+            <AnimatePresence mode="wait">
+              {filteredCards.length === 0 ? (
                 <motion.div
-                  key={`skeleton-${index}`}
-                  variants={cardVariants}
-                  className="transform-gpu"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="col-span-full text-center py-8 text-gray-500"
                 >
-                  <SkeletonCard />
+                  No results found for "{searchQuery}"
                 </motion.div>
-              ))
-            : // Show actual cards when data is loaded
-              cards.map(
-                (
-                  card: {
-                    color: string;
-                    title: string;
-                    description: string;
-                    emoji: string;
-                  },
-                  index: number
-                ) => (
-                  <motion.div
-                    key={index}
-                    variants={cardVariants}
-                    whileHover="hover"
-                    whileTap={{ scale: 0.95 }}
-                    className="transform-gpu"
-                  >
-                    <WorkCard
-                      color={card.color}
-                      title={card.title}
-                      description={card.description}
-                      icon={card.emoji}
-                    />
-                  </motion.div>
+              ) : (
+                filteredCards.map(
+                  (
+                    card: {
+                      color: string;
+                      title: string;
+                      description: string;
+                      emoji: string;
+                    },
+                    index: number
+                  ) => (
+                    <motion.div
+                      key={index}
+                      variants={cardVariants}
+                      whileHover="hover"
+                      whileTap={{ scale: 0.95 }}
+                      exit="exit"
+                      className="transform-gpu"
+                    >
+                      <WorkCard
+                        color={card.color}
+                        title={card.title}
+                        description={card.description}
+                        icon={card.emoji}
+                      />
+                    </motion.div>
+                  )
                 )
               )}
+            </AnimatePresence>
+          )}
         </motion.div>
       </div>
     </motion.div>
