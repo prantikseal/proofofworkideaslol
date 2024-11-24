@@ -21,7 +21,8 @@ const Header = () => {
   }, [activeIndex]);
 
   const getSpanClass = (index: any) => {
-    const baseClasses = spans[index].className || "";
+    // const baseClasses = spans[index].className || "";
+    const baseClasses = "";
     if (activeIndex === index) {
       return `${baseClasses} text-orange-500 transition-colors duration-500`;
     } else {
