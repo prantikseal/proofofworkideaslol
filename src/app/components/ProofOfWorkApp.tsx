@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -42,7 +43,7 @@ const ProofOfWorkApp = () => {
 
     const query = searchQuery.toLowerCase();
     const filtered = cards.filter(
-      (card) =>
+      (card: { title: string; description: string }) =>
         card.title.toLowerCase().includes(query) ||
         card.description.toLowerCase().includes(query)
     );
@@ -199,7 +200,7 @@ const ProofOfWorkApp = () => {
                   exit={{ opacity: 0 }}
                   className="col-span-full text-center py-8 text-gray-500"
                 >
-                  No results found for "{searchQuery}"
+                  No results found for &quot;{searchQuery}&quot;
                 </motion.div>
               ) : (
                 filteredCards.map(

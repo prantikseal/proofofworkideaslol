@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import React, { useState, useEffect } from "react";
 
 const Header = () => {
@@ -18,11 +20,7 @@ const Header = () => {
     return () => clearTimeout(timer);
   }, [activeIndex]);
 
-  const getSpanClass = (index: {
-    index: number;
-    className: string;
-    originalColor: string;
-  }) => {
+  const getSpanClass = (index: any) => {
     const baseClasses = spans[index].className || "";
     if (activeIndex === index) {
       return `${baseClasses} text-orange-500 transition-colors duration-500`;
